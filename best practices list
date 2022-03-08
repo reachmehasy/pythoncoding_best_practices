@@ -1,0 +1,109 @@
+
+1.	USAGE
+Generally, we will use Python for one of the following:
+
+ Type                       	 Purpose                                                       
+ _library code_       	 Is code with the intent to be imported into other python code 
+ _pipeline code      	 Is code with the sole purpose of doing ELT or ETL   jobs.     
+ _glue/spark/dataflow code_ 	 Is code with the sole purpose of running in AWS Glue/Spark    
+The style guide provides different guidelines for these.
+2.	IMPORTS
+•	Use `import x` for importing packages and modules.
+•	Use `from x import y` where `x` is the package prefix and `y` is the module
+name with no prefix.
+•	Use `from x import y as z` if two modules named `y` are to be imported or if
+`y` is an inconveniently long name.
+•	Use `import y as z` only when `z` is a standard abbreviation (e.g., `np` for
+`numpy`).
+•	If you are only going to use a specific function or class from a module then specifically import that.
+For example the module `sound.effects.echo` may be imported as follows:
+```python
+from sound.effects.echo import EchoFilter
+...
+EchoFilter(input, output, delay=0.7, atten=4)
+```
+•	Do not use relative names in imports. Even if the module is in the same package, use the full package name. This helps prevent unintentionally importing a package twice.
+
+3.	PACKAGES
+•	Import each module using the full pathname location of the module.
+•	Avoids conflicts in module names or incorrect imports due to the module search
+•	path not being what the author expected.  Makes it easier to find modules.
+Imports should be as follows:
+Yes:
+```python
+from doctor.who import jodie
+```
+No: _(assume this file lives in `doctor/who/` where `jodie.py` also exists)_
+```python
+import jodie
+```
+If you're stuck with python 2, you can use the `__future__` package to enforce this:
+```python
+from __future__ import absolute_import
+```
+4.	EXCEPTIONS
+Use try/except sparingly, it tends to lead to code that is hard to follow from a control flow perspective.
+Every time you intend to use a try, make sure you can prove you need it
+Exceptions must follow certain conditions:
+•	Raise exceptions like this: `raise MyError('Error message')` or `raiseMyError()`. Do not use the two-argument form (`raise MyError, 'Error message'`).
+•	Make use of built-in exception classes when it makes sense. 
+For example,
+raise a `ValueError` if you were passed a negative number but were expecting a positive one. 
+Do not use `assert`   statements for validating argument values of a public API. `assert` is used to ensure internal correctness, not to enforce correct usage nor to indicate that some unexpected event occurred.
+If an exception is desired in the latter cases, use a raise statement.
+ For example:
+    ```python
+    Yes:
+        if not port:
+          raise ConnectionError('Could not connect to service on %d or higher.' % (minimum,))
+        assert port >= minimum, 'Unexpected port %d when minimum was %d.' % (port, minimum)
+        return port
+    ```
+    ```python
+    No:
+        assert minimum >= 1024, 'Minimum port must be at least 1024.'
+        port = self._find_next_open_port(minimum)
+        assert port is not None
+        return port
+    ```
+•	Don't attempt to make custom exceptions when built in ones are available.
+•	Minimize the amount of code in a `try`/`except` block. The larger the body of the `try`, the more likely that an exception will be raised by a line of code that you didn't expect to raise an exception. In those cases, the `try`/`except` block hides a real error.
+•	Use the `finally` clause to execute code whether an exception is raised in the `try` block. This is often useful for cleanup, i.e., closing a file.
+•	When capturing an exception, use `as` rather than a comma. 
+For example:
+    ```python
+    try:
+      raise Error()
+    except Error as error:
+      pass
+    ```
+•	Never use catch-all `except:` statements, or catch `Exception` or `StandardError`, unless you are re-raising the exception or in the outermost block in your thread (and printing an error message). 
+•	Python is very     tolerant in this regard and `except:` will really catch everything including misspelled names, sys.exit() calls, Ctrl+C interrupts, unit test failures and all kinds of other exceptions that you simply don't want to catch.
+5.	CODE STANDARD
+1.	Add one liner comments on each function/ docstring - These comments should basically answer the Why part of the block
+2.	Add logger.info on each step to understand on which stage the code is running - Optional
+3.	Add logger.error on each except block.  - Mandatory
+4.	Code should be in below format (applicable for pyspark/glue)–
+I.	Onetime Imports
+II.	Variable (Constants/Locals)
+III.	Custom Function 
+IV.	__main__function/ In case of glue init and commit
+V.	Parse Arguments
+VI.	Spark session initialization
+VII.	Custom main call
+VIII.	Stop spark session
+5.	We should take care of stop spark session and close DB connection in except blocks where we are exiting the script abruptly. Our connections should not be left open.
+6.	Instead of catching generic "Exception", It would be better if we catch specific exceptions. Also, when we catch generic exception, we are always logging exception as “error”. Sometimes we may want to log them as warning or info
+7.	Cache small and frequently used dataset whenever possible and remember to un-cache it when the dataframe or table is no longer used.
+8.	Make use of sys.exit(1) instead of other exit codes whenever exiting from the script due to an error.
+9.	Be cautious while performing memory intensive operation.
+Eg: for df.count() If you can convert it into native python data structures and perform count operations it will be more optimized.
+6.	ADDITIONAL LIBRARIES
+
+There are few additional libraries available in python which can be used to style and format the python code without manual intervention.
+Run these in this order
+1.	`pylint` for common issues
+`pylint` is a tool for finding bugs and style problems in Python source code. 
+2.	`isort` to clean up import statements
+`isort` organizes the import statements https://pypi.org/project/isort/
+
